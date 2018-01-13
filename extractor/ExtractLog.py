@@ -57,6 +57,13 @@ class ExtractLog:
                     else:
                         log_date = re.search('[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]', line)
                         self.extract_general_log.dates_running.append(log_date.group(0))
+
+                        current_number_of_days = self.extract_general_log.\
+                            dates_running_by_file_log.get(open_input_file.name, [])
+                        current_number_of_days.append(log_date.group(0))
+                        self.extract_general_log.dates_running_by_file_log[open_input_file.name] = \
+                            current_number_of_days
+
                         self.extract_general_log.processed_files.append(input_filename)
 
     def extract_all_logs(self):
