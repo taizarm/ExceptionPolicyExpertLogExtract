@@ -2,6 +2,7 @@ import os
 import re
 from extractor.ExtractErrorLogLine import ExtractErrorLogLine
 from extractor.ExtractInfoLogLine import ExtractInfoLogLine
+from extractor.ExtractWarningLogLine import ExtractWarningLogLine
 
 
 class ExtractLog:
@@ -26,36 +27,28 @@ class ExtractLog:
         self.dict_info = {}
         self.extract_info_log = ExtractInfoLogLine(self.dict_info)
 
+        self.dict_warning = {}
+        self.dict_warning_improper_handling = {}
+        self.dict_warning_improper_throwing = {}
+        self.dict_warning_possible_handling = {}
+        self.extract_warning_log = ExtractWarningLogLine(self.dict_warning, self.dict_warning_improper_handling,
+                                                         self.dict_warning_improper_throwing,
+                                                         self.dict_warning_possible_handling)
+
         self.processed_files = []
         self.total_logs = 0
         self.dates_running = []
 
-    def process_info_log(self, log_line):
-        self.extract_info_log.process_info_log(log_line)
-
-    def process_warning_log(self, log_line):
-        '''
-        Types of warning logs:
-            WARNING - Violation detected (ImproperHandlingVerifier). Rule: (...)
-            WARNING - Violation detected (ImproperThrowingVerifier). Rule: (...)
-            WARNING - Handling information detected (PossibleHandlersInformation). Rule: (...)
-        '''
-        # print('process_warning_log')
-        pass
-
-    def process_error_log(self, log_line):
-        self.extract_error_log.process_error_log(log_line)
-
     def process_line_log(self, log_line):
         if self.log_info_pattern in log_line:
-            self.process_info_log(log_line)
+            self.extract_info_log.process_info_log(log_line)
         elif self.log_warning_pattern in log_line:
-            self.process_warning_log(log_line)
+            self.extract_warning_log.process_warning_log(log_line)
         elif self.log_error_pattern in log_line:
-            self.process_error_log(log_line)
+            self.extract_error_log.process_error_log(log_line)
 
     def write_general_log_file(self):
-        # Output file with general indo
+        # Output file with general info
         filename = '{}/{}'.format(self.output_directory, self.general_extract_file_name)
         output_file = os.path.normpath(filename)
 
@@ -66,18 +59,29 @@ class ExtractLog:
             out_file.write('Days running: {}\n'.format(set(self.dates_running)))
 
     def write_info_log_file(self):
-        # Output file with general indo
+        # Output file with general info
         filename = '{}/{}'.format(self.output_directory, self.info_extract_file_name)
         output_file = os.path.normpath(filename)
 
         with open(output_file, "w") as out_file:
             out_file.write('dict_info: {}\n'.format(self.dict_info))
 
+    def write_warning_log_file(self):
+        # Output file with warning info
+        filename = '{}/{}'.format(self.output_directory, self.warning_extract_file_name)
+        output_file = os.path.normpath(filename)
+
+        with open(output_file, "w") as out_file:
+            out_file.write('dict_warning_improper_handling: {}\n'.format(self.dict_warning_improper_handling))
+            out_file.write('dict_warning_improper_throwing: {}\n'.format(self.dict_warning_improper_throwing))
+            out_file.write('dict_warning_possible_handling: {}\n'.format(self.dict_warning_possible_handling))
+
     def write_all_log_files(self):
         self.write_general_log_file()
         self.write_info_log_file()
+        self.write_warning_log_file()
 
-    def extract_all_logs(self):
+    def populate_dicts_from_log_lines(self):
 
         # Iterate over all log files
         for filename in os.listdir(self.filtered_directory):
@@ -102,4 +106,11 @@ class ExtractLog:
                         self.dates_running.append(log_date.group(0))
                         self.processed_files.append(input_filename)
 
+        # self.write_all_log_files()
+
+    def extract_all_logs(self):
+
+        self.populate_dicts_from_log_lines()
+        self.extract_warning_log.process_all_logs()
         self.write_all_log_files()
+
