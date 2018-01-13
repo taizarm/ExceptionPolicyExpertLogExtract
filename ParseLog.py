@@ -30,5 +30,9 @@ class ParseLog:
 
 if __name__ == "__main__":
     parser = ParseLog()
+    print('Cleaning output directories')
     parser.clean_output_dir()
+
+    print('Lor parsing starting')
     parser.parse_log()
+    print('Stating log finished - See the output directory')
