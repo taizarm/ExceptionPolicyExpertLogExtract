@@ -4,18 +4,16 @@ import os
 
 class ExtractWarningLogLine:
 
-    def __init__(self, dict_warning, dict_warning_improper_handling,
-                 dict_warning_improper_throwing, dict_warning_possible_handling):
+    def __init__(self):
 
         self.pattern_improper_handling = '!MESSAGE WARNING - Violation detected (ImproperHandlingVerifier). '
         self.pattern_improper_throwing = '!MESSAGE WARNING - Violation detected (ImproperThrowingVerifier). '
         self.pattern_handling_information = '!MESSAGE WARNING - ' \
                                             'Handling information detected (PossibleHandlersInformation). '
 
-        self.dict_warning = dict_warning
-        self.dict_warning_improper_handling = dict_warning_improper_handling
-        self.dict_warning_improper_throwing = dict_warning_improper_throwing
-        self.dict_warning_possible_handling = dict_warning_possible_handling
+        self.dict_warning_improper_handling = {}
+        self.dict_warning_improper_throwing = {}
+        self.dict_warning_possible_handling = {}
 
         self.output_directory = 'output'
         self.pattern_rule = '.*Rule: (R[0-9]+)'

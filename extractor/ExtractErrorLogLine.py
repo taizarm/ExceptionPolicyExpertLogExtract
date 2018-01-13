@@ -2,7 +2,7 @@
 
 class ExtractErrorLogLine:
 
-    def __init__(self, dict_errors):
+    def __init__(self):
 
         self.pattern_something_wrong = 'Something wrong happened when processing modified files'
         self.pattern_workspace_not_file = 'The workspace does not have the file /src-gen/contract.xml, with ECL rules.'
@@ -10,7 +10,9 @@ class ExtractErrorLogLine:
         self.pattern_file_not_found = 'File contract.xml not found'
         self.pattern_marker_error = 'Something wrong happened when creating/removing markers'
 
-        self.dict_errors = dict_errors
+        self.dict_errors = {}
+
+        self.error_extract_file_name = 'error_extract.csv'
 
     def process_error_log(self, log_line):
         '''
