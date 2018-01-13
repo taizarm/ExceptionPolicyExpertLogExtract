@@ -20,7 +20,9 @@ class ExtractWarningLogLine:
         self.output_directory = 'output'
         self.pattern_rule = '.*Rule: (R[0-9]+)'
 
-        self.warning_possible_handling_file_name = 'warning_possible_handling.csv'
+        self.warning_possible_handling_file_name = 'warning_possible_handling.txt'
+        self.warning_improper_throwing_file_name = 'warning_improper_throwing.txt'
+        self.warning_improper_handling_file_name = 'warning_improper_handling.txt'
 
     def process_warning_log(self, log_line):
         '''
@@ -36,14 +38,14 @@ class ExtractWarningLogLine:
         if self.pattern_handling_information in log_line:
             self.dict_warning_possible_handling[log_line] = self.dict_warning_possible_handling.get(log_line, 0) + 1
 
-    def process_possible_handling_warning(self):
+    def process_log_detail_by_type(self, items, pattern, output_file_name):
         dict_rule_qtd = {}
         dict_rule = {}
 
-        for k, v in sorted(self.dict_warning_possible_handling.items()):
+        for k, v in sorted(items):
 
             # Remove unnecessary characters
-            k = k.replace(self.pattern_handling_information, '')
+            k = k.replace(pattern, '')
 
             match_rule = re.search(self.pattern_rule, k)
 
@@ -54,7 +56,7 @@ class ExtractWarningLogLine:
             dict_rule_qtd[rule_name] = qtd + v
             dict_rule[rule_name] = k
 
-        filename = '{}/{}'.format(self.output_directory, self.warning_possible_handling_file_name)
+        filename = '{}/{}'.format(self.output_directory, output_file_name)
         output_file = os.path.normpath(filename)
 
         with open(output_file, "w") as out_file:
@@ -78,7 +80,11 @@ class ExtractWarningLogLine:
                 out_file.write('{},{},{},{}\n'.format(class_name, method_name, exception_name, dict_rule_qtd[key]))
 
     def process_all_logs(self):
-        self.process_possible_handling_warning()
+        self.process_log_detail_by_type(self.dict_warning_possible_handling.items(), self.pattern_handling_information,
+                                        self.warning_possible_handling_file_name)
 
+        self.process_log_detail_by_type(self.dict_warning_improper_throwing.items(), self.pattern_improper_throwing,
+                                        self.warning_improper_throwing_file_name)
 
-
+        self.process_log_detail_by_type(self.dict_warning_improper_handling.items(), self.pattern_improper_handling,
+                                        self.warning_improper_handling_file_name)
