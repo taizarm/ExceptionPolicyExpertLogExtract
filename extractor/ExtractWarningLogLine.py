@@ -11,6 +11,10 @@ class ExtractWarningLogLine:
         self.pattern_handling_information = '!MESSAGE WARNING - ' \
                                             'Handling information detected (PossibleHandlersInformation). '
 
+        self.improper_handling_name = 'ImproperHandlingVerifier'
+        self.improper_throwing_name = 'ImproperThrowingVerifier'
+        self.handling_information_name = 'PossibleHandlersInformation'
+
         self.dict_warning_improper_handling = {}
         self.dict_warning_improper_throwing = {}
         self.dict_warning_possible_handling = {}
@@ -36,9 +40,10 @@ class ExtractWarningLogLine:
         if self.pattern_handling_information in log_line:
             self.dict_warning_possible_handling[log_line] = self.dict_warning_possible_handling.get(log_line, 0) + 1
 
-    def process_log_detail_by_type(self, items, pattern, output_file_name):
-        dict_rule_qtd = {}
-        dict_rule = {}
+    def process_log_detail_by_type(self, items, violation_type, pattern, output_file_name):
+
+        rules_list = []
+        dict_violations_by_rules = {}
 
         for k, v in sorted(items):
 
@@ -50,39 +55,52 @@ class ExtractWarningLogLine:
             rule = match_rule.group(0)
             rule_name = rule.split(':')[1]
 
-            qtd = dict_rule_qtd.get(rule_name, 0)
-            dict_rule_qtd[rule_name] = qtd + v
-            dict_rule[rule_name] = k
+            rules_list.append(rule_name)
+
+            current_violations = dict_violations_by_rules.get(rule_name, [])
+            current_violations.append(k)
+            dict_violations_by_rules[rule_name] = current_violations
 
         filename = '{}/{}'.format(self.output_directory, output_file_name)
         output_file = os.path.normpath(filename)
 
         with open(output_file, "w") as out_file:
-            sort_keys = sorted(dict_rule_qtd)
+            sorted_rules_names = sorted(set(rules_list))
 
             out_file.write('Total warning messages:\n')
-            for key in sort_keys:
-                out_file.write('\t{}: {}\n'.format(key, dict_rule_qtd[key]))
+            total = 0
+            for key in sorted_rules_names:
+                out_file.write('\t{}: {}\n'.format(key, len(set(dict_violations_by_rules[key]))))
+                total += len(set(dict_violations_by_rules[key]))
+            out_file.write('Total:{}\n'.format(total))
 
-            out_file.write('\n\nDetail of each rule:\n')
-            for key in sort_keys:
-                out_file.write('\t{}\n'.format(dict_rule[key]))
+            # TODO add qtd of each violation
+            out_file.write('\n\nRules in CSV format '
+                           '(violationType,rule,className,methodName,exception):\n\n')
 
-            out_file.write('\n\nRules in CSV format (className,methodName,exception,qtdOfViolations):\n\n')
+            for rule_name in sorted_rules_names:
+                violations = dict_violations_by_rules[rule_name]
 
-            for key in sort_keys:
-                class_name = re.search('Class: \S*', dict_rule[key]).group(0).split(':')[1].strip()
-                method_name = re.search('Method: \S*', dict_rule[key]).group(0).split(':')[1].strip()
-                exception_name = re.search('Exception: \S*', dict_rule[key]).group(0).split(':')[1].strip()
+                for violation in set(violations):
+                    class_name = re.search('Class: \S*', violation).group(0).split(':')[1].strip()
+                    method_name = re.search('Method: \S*', violation).group(0).split(':')[1].strip()
+                    exception_name = re.search('Exception: \S*', violation).group(0).split(':')[1].strip()
 
-                out_file.write('{},{},{},{}\n'.format(class_name, method_name, exception_name, dict_rule_qtd[key]))
+                    out_file.write('{},{},{},{},{}\n'.format
+                                   (violation_type, rule_name.strip(), class_name, method_name, exception_name))
 
     def process_all_logs(self):
-        self.process_log_detail_by_type(self.dict_warning_possible_handling.items(), self.pattern_handling_information,
+        self.process_log_detail_by_type(self.dict_warning_possible_handling.items(),
+                                        self.handling_information_name,
+                                        self.pattern_handling_information,
                                         self.warning_possible_handling_file_name)
 
-        self.process_log_detail_by_type(self.dict_warning_improper_throwing.items(), self.pattern_improper_throwing,
+        self.process_log_detail_by_type(self.dict_warning_improper_throwing.items(),
+                                        self.improper_throwing_name,
+                                        self.pattern_improper_throwing,
                                         self.warning_improper_throwing_file_name)
 
-        self.process_log_detail_by_type(self.dict_warning_improper_handling.items(), self.pattern_improper_handling,
+        self.process_log_detail_by_type(self.dict_warning_improper_handling.items(),
+                                        self.improper_handling_name,
+                                        self.pattern_improper_handling,
                                         self.warning_improper_handling_file_name)
